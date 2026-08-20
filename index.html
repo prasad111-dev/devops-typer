@@ -150,6 +150,7 @@ devopstyper-59
               <button class="wordModeBtn" id="wordModeBtn">Word Mode</button>
               <button class="wordModeBtn" id="commandsBtn">Commands</button>
               <button class="wordModeBtn" id="historyBtn">History</button>
+              <button class="wordModeBtn" id="statsBtn">Stats</button>
             </div>
           </div>
           <p class="sidebarHint">Pick a question &amp; answer, then type it as a passage.</p>
@@ -161,6 +162,16 @@ devopstyper-59
               <button class="historyClear" id="historyClearBtn">Clear</button>
             </div>
             <div class="historyList" id="historyList"></div>
+          </div>
+          <div class="historyPanel hidden" id="statsPanel">
+            <div class="historyHead">
+              <span>Site Stats (Admin)</span>
+            </div>
+            <div class="statsForm">
+              <input class="statsKey" id="statsKeyInput" type="password" placeholder="Admin key" aria-label="Admin key" />
+              <button class="historyClear" id="statsViewBtn">View</button>
+            </div>
+            <div class="historyList" id="statsList"></div>
           </div>
         </aside>
       </div>

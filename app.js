@@ -1024,8 +1024,21 @@
   //  History (MongoDB-backed)
   // ============================================================
   let historyOpen = false;
+  let statsOpen = false;
+
+  function closeSidebarPanels() {
+    historyOpen = false;
+    statsOpen = false;
+    $("#historyPanel").classList.add("hidden");
+    $("#statsPanel").classList.add("hidden");
+    $("#historyBtn").classList.remove("active");
+    $("#statsBtn").classList.remove("active");
+    $("#categoryTabs").classList.remove("hidden");
+    $("#qaList").classList.remove("hidden");
+  }
 
   function toggleHistory() {
+    if (statsOpen) closeSidebarPanels();
     historyOpen = !historyOpen;
     const panel = $("#historyPanel");
     panel.classList.toggle("hidden", !historyOpen);
@@ -1035,6 +1048,64 @@
     if (historyOpen) {
       loadHistory();
     }
+  }
+
+  function toggleStats() {
+    if (historyOpen) closeSidebarPanels();
+    statsOpen = !statsOpen;
+    const panel = $("#statsPanel");
+    panel.classList.toggle("hidden", !statsOpen);
+    $("#statsBtn").classList.toggle("active", statsOpen);
+    $("#categoryTabs").classList.toggle("hidden", statsOpen);
+    $("#qaList").classList.toggle("hidden", statsOpen);
+    if (statsOpen) {
+      const saved = localStorage.getItem("devtyper_admin_key");
+      if (saved) $("#statsKeyInput").value = saved;
+      $("#statsKeyInput").focus();
+    }
+  }
+
+  function viewStats() {
+    const key = $("#statsKeyInput").value.trim();
+    const list = $("#statsList");
+    if (!key) {
+      list.textContent = "Enter the admin key to view stats.";
+      return;
+    }
+    localStorage.setItem("devtyper_admin_key", key);
+    list.textContent = "Loading...";
+    fetch("api/stats?key=" + encodeURIComponent(key))
+      .then((r) => {
+        if (r.status === 401) throw new Error("Wrong admin key");
+        if (r.status === 503) throw new Error("Database not connected");
+        return r.json();
+      })
+      .then((s) => {
+        list.innerHTML = "";
+        const rows = [
+          ["Total visits", s.totalVisits],
+          ["Unique visitors", s.uniqueVisitors],
+          ["Visits today", s.todayVisits],
+          ["Tests completed", s.results],
+          ["Tests today", s.resultsToday],
+        ];
+        rows.forEach(([label, val]) => {
+          const div = document.createElement("div");
+          div.className = "historyItem";
+          const l = document.createElement("span");
+          l.className = "historyDate";
+          l.textContent = label;
+          const v = document.createElement("span");
+          v.className = "historyMode";
+          v.textContent = val;
+          div.appendChild(l);
+          div.appendChild(v);
+          list.appendChild(div);
+        });
+      })
+      .catch((err) => {
+        list.textContent = err.message;
+      });
   }
 
   function loadHistory() {
@@ -1194,6 +1265,21 @@
   // ============================================================
   //  Init
   // ============================================================
+  function trackVisit() {
+    try {
+      let vid = localStorage.getItem("devtyper_visitor");
+      if (!vid) {
+        vid = Math.random().toString(36).slice(2) + Date.now().toString(36);
+        localStorage.setItem("devtyper_visitor", vid);
+      }
+      fetch("api/visit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visitorId: vid }),
+      }).catch(() => {});
+    } catch (e) {}
+  }
+
   function init() {
     // populate dropdowns
     const switchSel = $("#switchselect");
@@ -1226,6 +1312,8 @@
     renderKeyboard();
 
     window.addEventListener("resize", fitKeyboard);
+
+    trackVisit();
 
     // typing test initial
     generateWords();
@@ -1415,6 +1503,21 @@
     $("#historyClearBtn").addEventListener("click", (e) => {
       e.stopPropagation();
       clearHistory();
+    });
+
+    // stats panel (admin)
+    $("#statsBtn").addEventListener("click", () => {
+      toggleStats();
+      keywrapper.focus();
+    });
+    $("#statsViewBtn").addEventListener("click", () => {
+      viewStats();
+    });
+    $("#statsKeyInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        viewStats();
+      }
     });
 
     // focus the input on load

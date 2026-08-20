@@ -17,6 +17,7 @@ app.use(express.static(path.join(__dirname)));
 
 let dbReady = false;
 let resultsCol = null;
+let visitsCol = null;
 
 async function connectDB() {
   try {
@@ -24,6 +25,7 @@ async function connectDB() {
     await client.connect();
     const db = client.db("devopstyper");
     resultsCol = db.collection("results");
+    visitsCol = db.collection("visits");
     dbReady = true;
     console.log("MongoDB connected to", mongoUri.split("@")[1] || "database");
   } catch (err) {
@@ -74,6 +76,37 @@ app.delete("/api/results", async (req, res) => {
   try {
     await resultsCol.deleteMany({});
     res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/visit", async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: "database not connected" });
+  const visitorId = req.body && req.body.visitorId;
+  if (!visitorId) return res.status(400).json({ error: "missing visitorId" });
+  try {
+    await visitsCol.insertOne({ visitorId: String(visitorId).slice(0, 100), ts: new Date() });
+    res.status(201).json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+const ADMIN_KEY = process.env.ADMIN_KEY || "devopstyper-admin";
+
+app.get("/api/stats", async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: "database not connected" });
+  if (req.query.key !== ADMIN_KEY) return res.status(401).json({ error: "unauthorized" });
+  try {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const totalVisits = await visitsCol.countDocuments({});
+    const uniqueVisitors = (await visitsCol.distinct("visitorId")).length;
+    const todayVisits = await visitsCol.countDocuments({ ts: { $gte: start } });
+    const results = await resultsCol.countDocuments({});
+    const resultsToday = await resultsCol.countDocuments({ date: { $gte: start } });
+    res.json({ totalVisits, uniqueVisitors, todayVisits, results, resultsToday });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
