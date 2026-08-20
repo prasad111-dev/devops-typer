@@ -880,3 +880,11 @@ const interviewQA = {
     }
   ]
 };
+
+// ============================================================
+//  Linux & DevOps typing paragraphs (used by Word Mode)
+// ============================================================
+const devopsParagraphs = [];
+Object.keys(interviewQA).forEach((cat) => {
+  interviewQA[cat].forEach((item) => devopsParagraphs.push(item.a));
+});

@@ -646,14 +646,24 @@
     return shuffled.slice(0, count);
   }
 
+  function pickParagraphWords(minWords) {
+    let para = devopsParagraphs[Math.floor(Math.random() * devopsParagraphs.length)];
+    let words = para.split(/\s+/).filter(Boolean);
+    while (words.length < minWords) {
+      const more = devopsParagraphs[Math.floor(Math.random() * devopsParagraphs.length)];
+      words = words.concat(more.split(/\s+/).filter(Boolean));
+    }
+    return words;
+  }
+
   function generateWords() {
     if (wordIndex < words.length) {
       words[wordIndex].focused = false;
     }
     words = [];
     wordIndex = 0;
-    const randomwords = getRandom(wordList, 30);
-    for (const w of randomwords) {
+    const paraWords = pickParagraphWords(30);
+    for (const w of paraWords) {
       words.push({ text: w, focused: false, status: "default" });
     }
     words[0].focused = true;
@@ -665,8 +675,8 @@
     }
     wordIndex = 0;
     if (!passageMode) {
-      const randomwords = getRandom(wordList, 15);
-      for (const w of randomwords) {
+      const paraWords = pickParagraphWords(15);
+      for (const w of paraWords) {
         words.push({ text: w, focused: false, status: "default" });
       }
     }
