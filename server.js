@@ -1,7 +1,15 @@
 const express = require("express");
 const { MongoClient, ObjectId } = require("mongodb");
 const path = require("path");
-const config = require("./config");
+
+let mongoUri = process.env.MONGO_URI;
+if (!mongoUri) {
+  try {
+    mongoUri = require("./config").mongoUri;
+  } catch (e) {
+    mongoUri = "";
+  }
+}
 
 const app = express();
 app.use(express.json());
@@ -12,12 +20,12 @@ let resultsCol = null;
 
 async function connectDB() {
   try {
-    const client = new MongoClient(config.mongoUri);
+    const client = new MongoClient(mongoUri);
     await client.connect();
     const db = client.db("devtyper");
     resultsCol = db.collection("results");
     dbReady = true;
-    console.log("MongoDB connected to", config.mongoUri.split("@")[1] || "database");
+    console.log("MongoDB connected to", mongoUri.split("@")[1] || "database");
   } catch (err) {
     console.error("MongoDB connection failed:", err.message);
     console.error("Edit config.js with your Atlas connection URI to enable history.");
