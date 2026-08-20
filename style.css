@@ -558,6 +558,25 @@ body.light .passageQuestion { color: #0277bd; border-bottom-color: #eeeeee; }
   padding: 0 16px;
   font-size: 0.8rem;
   opacity: 0.75;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 12px;
+}
+
+.creditLink {
+  color: #3ab049;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(58, 176, 73, 0.5);
+  transition: opacity 0.2s linear;
+}
+
+body.light .creditLink { color: #2a8f38; }
+
+.creditLink:hover {
+  opacity: 1;
+  border-bottom-style: solid;
 }
 
 .credit::before,
