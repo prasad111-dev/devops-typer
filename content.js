@@ -719,6 +719,124 @@ const interviewQA = {
       a: "Running the script with the minus x flag prints each command before executing it. The minus v flag prints input lines as they are read. These flags help trace variable values and control flow during execution."
     }
   ],
+  "Linux Troubleshooting": [
+    {
+      q: "What is the difference between more, cat and less?",
+      a: "cat displays a file all at once. more shows file content page by page, but is limited. less is more flexible than more; you can scroll both up and down, search, and read large files comfortably."
+    },
+    {
+      q: "Why do we check the top 20-30 lines of kernel logs?",
+      a: "We check the first lines to see the earliest boot and kernel messages, which often include hardware detection, driver loading, and the first failure point. For example, dmesg pipe head -30 helps catch initialization errors that happened right after boot started."
+    },
+    {
+      q: "Why do we check the last 30-50 lines of kernel logs?",
+      a: "We check the last lines to find the most recent kernel events, warnings, or errors. dmesg pipe tail -50 is useful when the system is currently slow, unstable, or something just failed."
+    },
+    {
+      q: "As a Linux admin how do you change the user password?",
+      a: "As root or with sudo, run passwd username. This updates the user's password securely."
+    },
+    {
+      q: "How to set password change notifications for a particular user?",
+      a: "You can set password aging with chage, for example chage -M 90 -W 7 username. This means the password expires every 90 days and warns the user 7 days before expiry. You can verify with chage -l username."
+    },
+    {
+      q: "If x1 is a normal user, how will you provide sudo access to x1?",
+      a: "Add x1 to the sudo or wheel group. Or edit the sudoers file safely using visudo. Then add a rule like x1 ALL=(ALL) ALL. This gives x1 sudo access while keeping sudo policy controlled centrally."
+    },
+    {
+      q: "How to know which server you are connected to in Linux?",
+      a: "Use hostname, hostname -f, or hostnamectl. To resolve the server name to an IP, use dig hostname or nslookup hostname. If you want to know the active connection path, ssh sessions and who and w can help too."
+    },
+    {
+      q: "What is a system call and a library call?",
+      a: "A system call is how a user-space program asks the kernel to do privileged work, like file access or process creation. A library call is a function in user space, while a system call is an entry into the kernel."
+    },
+    {
+      q: "How is the server started? Explain the process.",
+      a: "The typical boot flow is BIOS or UEFI starts hardware checks, then GRUB loads the kernel and initramfs. The kernel initializes devices and mounts the root filesystem. systemd starts as PID 1, and services, targets, and the login prompt come up."
+    },
+    {
+      q: "What is the Linux filesystem hierarchy?",
+      a: "Common directories include bin for essential user commands, etc for system configuration files, home for user home directories, var for variable data like logs, spool and cache, tmp for temporary files, and usr for user applications, libraries and shared data."
+    },
+    {
+      q: "What is the difference between an absolute path and a relative path?",
+      a: "An absolute path starts from the root directory slash, for example slash etc passwd. A relative path starts from the current working directory, for example docs slash file dot txt. Absolute paths are unambiguous; relative paths depend on where you are currently located."
+    },
+    {
+      q: "How do you check a permission issue and troubleshoot it?",
+      a: "Use ls -li or ls -lrt, namei -l path, id, and getfacl path. Check the owner, group, and permissions on every parent directory too. Many permission problems are caused by a missing execute permission on a directory, not just the target file."
+    },
+    {
+      q: "How do you troubleshoot hardware related issues?",
+      a: "Check dmesg, journalctl -k, lshw, lsblk, lspci, and free -h. Kernel logs usually show device, disk, memory, or driver issues first. For hardware failures, look for I/O errors, missing devices, PCI errors, or memory related warnings."
+    },
+    {
+      q: "What is the difference between a soft link and a hard link?",
+      a: "A hard link points to the same inode as the original file. A soft link, also called a symbolic link, points to the file name or path. If the original file is deleted, a hard link still works but a soft link breaks."
+    },
+    {
+      q: "How do you check the Linux kernel and operating system version?",
+      a: "uname -r shows the kernel release, uname -a gives full kernel and system info, and hostnamectl often shows OS details too. You can also check cat slash etc os-release."
+    },
+    {
+      q: "How do you check system logs and troubleshoot them?",
+      a: "Use journalctl, journalctl -xe, journalctl -k, tail -f var log messages, and tail -f var log syslog. If your environment uses Splunk, check the relevant host, time range, service name, and error keywords there. The key is to correlate the timestamp of the issue with the matching log source."
+    },
+    {
+      q: "How do you check and fix disk problems?",
+      a: "Use df -h, du -sh star, lsblk, fdisk -l, dmesg pipe grep -i error, and fsck. First identify whether the issue is space, inode exhaustion, or filesystem corruption. Then clean up space, unmount if needed, and run filesystem checks only when safe."
+    },
+    {
+      q: "How do you find mounting problems in Linux?",
+      a: "Use mount, df -h, cat slash etc fstab, journalctl -xe, and dmesg pipe grep -i mount. Common causes are wrong fstab entries, missing devices, bad UUIDs, or filesystem corruption. Also check permissions on the mount point and whether the device actually exists."
+    },
+    {
+      q: "What if the server is slow, which command should you run and why?",
+      a: "Common first commands are top, htop, uptime, free -h, vmstat 1, iostat -xz 1, df -h and sar. Use top or htop to see CPU and memory hungry processes, vmstat for memory, swap and CPU pressure, and iostat for disk bottlenecks. uptime quickly shows load average, which is a good first signal of contention."
+    },
+    {
+      q: "What are SUID, SGID and the sticky bit?",
+      a: "SUID makes a file run with the file owner's privileges. SGID makes a file run with group privileges, and on directories new files inherit the group. The sticky bit on shared directories means only the file owner or root can delete files. A classic example is tmp, which often uses the sticky bit."
+    },
+    {
+      q: "What is the difference between a process and a thread?",
+      a: "A process has its own memory space. A thread is a lightweight execution unit inside a process and shares the process memory. Threads are cheaper to create and communicate with each other more easily, but they also require careful synchronization."
+    },
+    {
+      q: "What is nice and renice?",
+      a: "nice starts a process with a given priority, and renice changes priority for a running process. Lower nice values mean higher scheduling priority. This is useful when you want a heavy job to be less disruptive."
+    },
+    {
+      q: "What is the wget command?",
+      a: "wget downloads files from the web or FTP from the command line. It is commonly used in scripts, automation, and server environments where you want non-interactive downloads."
+    },
+    {
+      q: "What is the telnet command?",
+      a: "telnet is an older protocol and tool used to test TCP connectivity and talk to services manually. It is useful for checking whether a port is reachable, but it is insecure for real remote login because it sends data in plain text."
+    },
+    {
+      q: "What is the ss -tuln command?",
+      a: "ss -tuln shows listening TCP and UDP sockets. The t flag means TCP, u means UDP, l means listening only, and n means numeric output with no DNS lookup. It is a modern replacement for many netstat use cases."
+    },
+    {
+      q: "What is the difference between scp and sftp?",
+      a: "scp copies files over SSH in a simple transfer mode. sftp provides an interactive file-transfer session over SSH, similar to FTP but encrypted. For scripted copying, scp is simpler; for browsing and managing files, sftp is more flexible."
+    },
+    {
+      q: "Explain the Linux boot process.",
+      a: "The standard sequence is BIOS or UEFI, then a bootloader such as GRUB, then the kernel loads. initramfs initializes early userspace, then the real root filesystem mounts. systemd starts services, and the login prompt or GUI appears."
+    },
+    {
+      q: "What is the grub command?",
+      a: "GRUB is the bootloader that loads the Linux kernel at startup. In practice, admins mostly interact with GRUB configuration, boot entries, or recovery mode rather than using it as a normal shell command."
+    },
+    {
+      q: "What is swap memory?",
+      a: "Swap is disk space used as backup virtual memory when RAM is insufficient. It helps avoid immediate crashes under memory pressure, but heavy swap usage usually means the system is low on RAM or has a memory bottleneck."
+    }
+  ],
   "Networking": [
     {
       q: "What is the difference between TCP and UDP?",
