@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: devops-typer
+    name: devopstyper-59
     runtime: node
     plan: free
     buildCommand: npm install

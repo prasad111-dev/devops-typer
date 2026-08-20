@@ -22,7 +22,7 @@ async function connectDB() {
   try {
     const client = new MongoClient(mongoUri);
     await client.connect();
-    const db = client.db("devtyper");
+    const db = client.db("devopstyper");
     resultsCol = db.collection("results");
     dbReady = true;
     console.log("MongoDB connected to", mongoUri.split("@")[1] || "database");
@@ -81,5 +81,5 @@ app.delete("/api/results", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`devtyper server running at http://localhost:${PORT}`);
+  console.log(`devopstyper-59 server running at http://localhost:${PORT}`);
 });
