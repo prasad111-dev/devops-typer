@@ -705,12 +705,15 @@ body.light .resultarea { color: #000000; }
 }
 
 .wordModeBtn {
-  font-size: 0.75rem;
-  padding: 0.4rem 0.7rem;
+  font-size: 0.72rem;
+  padding: 0.35rem 0.55rem;
   border-radius: 4px;
   cursor: pointer;
   border: 1px solid;
   white-space: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: center;
   transition: background 0.2s linear, color 0.2s linear, border-color 0.2s linear;
 }
 
