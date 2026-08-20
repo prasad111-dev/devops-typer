@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="icon" href="favicon.svg" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#212121" />
+    <meta
+      name="description"
+      content="Linux & DevOps typing simulator - practice terminal commands, Docker, Kubernetes, and Git with mechanical key switches"
+    />
+    <title>DevOps Keyboard Simulator</title>
+  </head>
+  <body>
+    <div id="root">
+      <!-- Header -->
+      <div id="header" class="header">
+        <div class="headerContainer">
+          <div class="logo">
+            <svg class="logosvg" height="32" width="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+              <rect x="1" y="6" width="30" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
+              <line x1="4" y1="11" x2="7" y2="11" stroke="currentColor" stroke-width="2"/>
+              <line x1="10" y1="11" x2="13" y2="11" stroke="currentColor" stroke-width="2"/>
+              <line x1="16" y1="11" x2="19" y2="11" stroke="currentColor" stroke-width="2"/>
+              <line x1="22" y1="11" x2="25" y2="11" stroke="currentColor" stroke-width="2"/>
+              <line x1="4" y1="16" x2="7" y2="16" stroke="currentColor" stroke-width="2"/>
+              <line x1="10" y1="16" x2="13" y2="16" stroke="currentColor" stroke-width="2"/>
+              <line x1="16" y1="16" x2="19" y2="16" stroke="currentColor" stroke-width="2"/>
+              <line x1="22" y1="16" x2="25" y2="16" stroke="currentColor" stroke-width="2"/>
+              <line x1="10" y1="21" x2="22" y2="21" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            devtyper
+          </div>
+          <div class="headerControls">
+            <div class="subnav" id="fullscreenToggle" title="Toggle fullscreen">
+              <svg class="fullscreenIcon expand" id="fullscreenExpand" viewBox="0 0 24 24" height="16" width="16" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" fill="currentColor"/>
+              </svg>
+              <svg class="fullscreenIcon compress hidden" id="fullscreenCompress" viewBox="0 0 24 24" height="16" width="16" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z" fill="currentColor"/>
+              </svg>
+            </div>
+            <div class="subnav" id="themeToggle" title="Toggle theme">
+              <svg class="lightswitch moon" id="moonIcon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z" fill="currentColor"/>
+              </svg>
+              <svg class="lightswitch sun hidden" id="sunIcon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.65-5.65a.5.5 0 0 1 0 .707l-1.414 1.414a.5.5 0 1 1-.707-.707L12.95 2.65a.5.5 0 0 1 .707 0zM4.464 8.95a.5.5 0 0 1 0 .707L3.05 11.07a.5.5 0 0 1-.707-.707L3.757 8.95a.5.5 0 0 1 .707 0zM8 16a.5.5 0 0 0 .5-.5v-2a.5.5 0 0 0-1 0v2a.5.5 0 0 0 .5.5zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708zM12.95 11.07a.5.5 0 0 0 .707 0l1.414 1.414a.5.5 0 0 1-.707.707L12.95 11.77a.5.5 0 0 1 0-.707z" fill="currentColor"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main -->
+      <div id="keywrapper" class="keywrapper" tabindex="0">
+        <div class="keycontainer">
+
+          <!-- Typing Test -->
+          <div id="typingcontainer" class="typingcontainer">
+            <div class="wordcontainer">
+              <div class="passageQuestion hidden" id="passageQuestion"></div>
+              <div class="wordarea" id="wordarea">
+                <div class="words" id="words"></div>
+              </div>
+              <div class="resultarea hidden" id="resultarea">
+                <div class="results">
+                  <div class="resultcol">
+                    <div class="wpm" id="resultWpm">0 WPM</div>
+                  </div>
+                  <div class="resultcol">
+                    <div class="accuracy" id="resultAccuracy">0% accuracy</div>
+                  </div>
+                  <div class="resultcol">
+                    <div class="keystrokes"><span class="correctresult" id="resultCorrect">0</span> | <span class="incorrectresult" id="resultIncorrect">0</span> keystrokes</div>
+                  </div>
+                  <div class="resultcol">
+                    <div class="wordresult"><span class="correctresult" id="resultWordsCorrect">0</span> | <span class="incorrectresult" id="resultWordsIncorrect">0</span> words</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="inputbar dark" id="inputbar">
+              <input
+                class="typinginput"
+                id="typinginput"
+                type="text"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+                aria-label="Typing input"
+              />
+              <span class="toolbar">
+                <span class="time" id="timeDisplay">0:60</span>
+                <button class="redo dark" id="redoBtn">Redo</button>
+              </span>
+            </div>
+          </div>
+
+          <!-- Selects -->
+          <div class="selectcontainer" id="selectcontainer">
+            <div class="selectarea">
+              <div class="selectcol">
+                <select class="dropdown dark" id="switchselect" aria-label="Switch Type"></select>
+              </div>
+              <div class="selectcol">
+                <select class="dropdown dark" id="layoutselect" aria-label="Keyboard Layout"></select>
+              </div>
+              <div class="selectcol">
+                <select class="dropdown dark" id="caseselect" aria-label="Case Color"></select>
+              </div>
+              <div class="selectcol">
+                <select class="dropdown dark" id="timeselect" aria-label="Time Limit">
+                  <option value="15">0:15</option>
+                  <option value="30">0:30</option>
+                  <option value="60" selected>1:00</option>
+                  <option value="90">1:30</option>
+                  <option value="120">2:00</option>
+                  <option value="180">3:00</option>
+                  <option value="300">5:00</option>
+                  <option value="600">10:00</option>
+                </select>
+              </div>
+              <div class="mutecol">
+                <label class="mutebox">
+                  <input type="checkbox" id="muteCheckbox" aria-label="Mute Sound" />
+                  <span class="checkMark"></span>
+                  Mute
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Keyboard -->
+          <div class="keyboardWrapper" id="keyboardWrapper">
+            <div class="keyboard" id="keyboard"></div>
+          </div>
+        </div>
+
+        <!-- Interview Practice Sidebar -->
+        <aside class="interviewSidebar" id="interviewSidebar">
+          <div class="sidebarHeader">
+            <h3>Interview Practice</h3>
+            <div class="modeButtons">
+              <button class="wordModeBtn" id="wordModeBtn">Word Mode</button>
+              <button class="wordModeBtn" id="commandsBtn">Commands</button>
+              <button class="wordModeBtn" id="historyBtn">History</button>
+            </div>
+          </div>
+          <p class="sidebarHint">Pick a question &amp; answer, then type it as a passage.</p>
+          <div class="categoryTabs" id="categoryTabs"></div>
+          <div class="qaList" id="qaList"></div>
+          <div class="historyPanel hidden" id="historyPanel">
+            <div class="historyHead">
+              <span>Typing History</span>
+              <button class="historyClear" id="historyClearBtn">Clear</button>
+            </div>
+            <div class="historyList" id="historyList"></div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- Footer -->
+      <div class="footerContainer">
+        <div class="credit">&copy; 2026 devtyper-59. Developed by Prasad with &#127861; tea and &#10084;&#65039; love.</div>
+      </div>
+    </div>
+
+    <script src="content.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
