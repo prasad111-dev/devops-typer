@@ -93,7 +93,7 @@ app.post("/api/visit", async (req, res) => {
   }
 });
 
-const ADMIN_KEY = process.env.ADMIN_KEY || "devopstyper-admin";
+const ADMIN_KEY = process.env.ADMIN_KEY || "Prasad@072755";
 
 app.get("/api/stats", async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: "database not connected" });
