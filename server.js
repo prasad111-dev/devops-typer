@@ -16,6 +16,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
 let dbReady = false;
+let dbError = "";
 let resultsCol = null;
 let visitsCol = null;
 
@@ -29,15 +30,20 @@ async function connectDB() {
     dbReady = true;
     console.log("MongoDB connected to", mongoUri.split("@")[1] || "database");
   } catch (err) {
+    dbError = err.message;
     console.error("MongoDB connection failed:", err.message);
     console.error("Edit config.js with your Atlas connection URI to enable history.");
   }
+}
+
+function dbUnavailable(res) {
+  return res.status(503).json({ error: "database not connected", detail: dbError });
 }
 connectDB();
 
 // ---- API ----
 app.get("/api/results", async (req, res) => {
-  if (!dbReady) return res.status(503).json({ error: "database not connected" });
+  if (!dbReady) return dbUnavailable(res);
   try {
     const items = await resultsCol.find({}).sort({ date: -1 }).limit(200).toArray();
     res.json(items);
@@ -47,7 +53,7 @@ app.get("/api/results", async (req, res) => {
 });
 
 app.post("/api/results", async (req, res) => {
-  if (!dbReady) return res.status(503).json({ error: "database not connected" });
+  if (!dbReady) return dbUnavailable(res);
   const doc = req.body;
   if (!doc || doc.wpm === undefined) {
     return res.status(400).json({ error: "invalid payload" });
@@ -62,7 +68,7 @@ app.post("/api/results", async (req, res) => {
 });
 
 app.delete("/api/results/:id", async (req, res) => {
-  if (!dbReady) return res.status(503).json({ error: "database not connected" });
+  if (!dbReady) return dbUnavailable(res);
   try {
     await resultsCol.deleteOne({ _id: new ObjectId(req.params.id) });
     res.json({ ok: true });
@@ -72,7 +78,7 @@ app.delete("/api/results/:id", async (req, res) => {
 });
 
 app.delete("/api/results", async (req, res) => {
-  if (!dbReady) return res.status(503).json({ error: "database not connected" });
+  if (!dbReady) return dbUnavailable(res);
   try {
     await resultsCol.deleteMany({});
     res.json({ ok: true });
@@ -82,7 +88,7 @@ app.delete("/api/results", async (req, res) => {
 });
 
 app.post("/api/visit", async (req, res) => {
-  if (!dbReady) return res.status(503).json({ error: "database not connected" });
+  if (!dbReady) return dbUnavailable(res);
   const visitorId = req.body && req.body.visitorId;
   if (!visitorId) return res.status(400).json({ error: "missing visitorId" });
   try {
@@ -96,7 +102,7 @@ app.post("/api/visit", async (req, res) => {
 const ADMIN_KEY = process.env.ADMIN_KEY || "Prasad@072755";
 
 app.get("/api/stats", async (req, res) => {
-  if (!dbReady) return res.status(503).json({ error: "database not connected" });
+  if (!dbReady) return dbUnavailable(res);
   if (req.query.key !== ADMIN_KEY) return res.status(401).json({ error: "unauthorized" });
   try {
     const start = new Date();
