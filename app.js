@@ -435,7 +435,7 @@
     if (!naturalW) return;
     const box = $("#typingcontainer");
     const target = box ? box.clientWidth - 8 : wrapper.clientWidth;
-    const scale = Math.max(0.4, Math.min(1.4, target / naturalW));
+    const scale = Math.max(0.3, Math.min(1.4, target / naturalW));
     if (Math.abs(scale - 1) > 0.001) {
       kb.style.transform = "scale(" + scale + ")";
       wrapper.style.height = Math.round(naturalH * scale) + "px";
@@ -1013,6 +1013,11 @@
       btn.addEventListener("click", () => {
         activePassage = { cat: currentCategory, idx: i };
         loadPassage(item);
+        const sb = $("#interviewSidebar");
+        if (sb && sb.classList.contains("sidebarOpen")) {
+          sb.classList.remove("sidebarOpen");
+          closeSidebarPanels();
+        }
       });
       div.appendChild(q);
       div.appendChild(a);
@@ -1410,8 +1415,7 @@
 
     // fullscreen toggle
     const fsExpand = $("#fullscreenExpand");
-    const fsCompress = $("#fullscreenCompress");
-    const updateFullscreenIcon = () => {
+    const fsCompress = $("#fullscreenCompress");    const updateFullscreenIcon = () => {
       const fs = !!document.fullscreenElement;
       if (fsExpand) fsExpand.classList.toggle("hidden", fs);
       if (fsCompress) fsCompress.classList.toggle("hidden", !fs);
@@ -1524,12 +1528,32 @@
     // interview practice sidebar
     renderCategoryTabs();
     renderQAList();
+    const sidebarEl = $("#interviewSidebar");
+    const closeSidebarMobile = () => {
+      if (sidebarEl) sidebarEl.classList.remove("sidebarOpen");
+      closeSidebarPanels();
+    };
+    const sidebarToggleBtn = $("#sidebarToggleBtn");
+    if (sidebarToggleBtn) {
+      sidebarToggleBtn.addEventListener("click", () => {
+        if (sidebarEl && sidebarEl.classList.toggle("sidebarOpen")) {
+          renderCategoryTabs();
+          sidebarEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
+    }
+    const sidebarCloseBtn = $("#sidebarCloseBtn");
+    if (sidebarCloseBtn) {
+      sidebarCloseBtn.addEventListener("click", () => closeSidebarMobile());
+    }
     $("#wordModeBtn").addEventListener("click", () => {
       loadRandomMode();
+      closeSidebarMobile();
       keywrapper.focus();
     });
     $("#commandsBtn").addEventListener("click", () => {
       loadCommands();
+      closeSidebarMobile();
       keywrapper.focus();
     });
 
