@@ -2,10 +2,14 @@
   "name": "devopstyper-59",
   "version": "1.0.0",
   "private": true,
-  "description": "Linux & DevOps typing simulator with MongoDB result history",
+  "description": "Linux & DevOps typing simulator with interview Q&A, commands, and MongoDB history",
   "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node --watch server.js"
   },
   "dependencies": {
     "express": "^4.19.2",

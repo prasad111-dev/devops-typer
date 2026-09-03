@@ -5,10 +5,10 @@ services:
     plan: free
     buildCommand: npm install
     startCommand: node server.js
-    healthCheckPath: /
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
-        value: 20
+        value: "20"
       - key: MONGO_URI
         sync: false
       - key: ADMIN_KEY

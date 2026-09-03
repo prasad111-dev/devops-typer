@@ -152,6 +152,7 @@
   let started = false;
   let finished = false;
   let ticker = null;
+  let startTime = 0;
   let stats = {
     wpm: 0,
     keystrokes: { correct: 0, incorrect: 0 },
@@ -408,6 +409,14 @@
         keyEl.addEventListener("mouseleave", () => {
           if (k.pressed) handleKeyMouseUp(k.class, k);
         });
+        keyEl.addEventListener("touchstart", (e) => {
+          e.preventDefault();
+          handleKeyMouseDown(k.class, k);
+        }, { passive: false });
+        keyEl.addEventListener("touchend", (e) => {
+          e.preventDefault();
+          handleKeyMouseUp(k.class, k);
+        }, { passive: false });
 
         container.appendChild(keyEl);
       });
@@ -576,7 +585,7 @@
   }
 
   function handleKeyDown(e) {
-    if (e.keyCode === 18 || (e.keyCode >= 112 && e.keyCode <= 123)) {
+    if (e.key === "Alt" || (e.key && e.key.startsWith("F") && parseInt(e.key.slice(1)) >= 1 && parseInt(e.key.slice(1)) <= 12)) {
       e.preventDefault();
     }
     const name = keyNameFromEvent(e.key);
@@ -741,7 +750,8 @@
   }
 
   function startTimer() {
-    let endTime = parseInt(new Date().getTime()) + raceTime;
+    startTime = Date.now();
+    let endTime = startTime + raceTime;
     ticker = setInterval(() => {
       let remaining = endTime - parseInt(new Date().getTime());
       timeLeft = Math.max(0, Math.ceil(remaining / 1000));
@@ -757,7 +767,8 @@
     clearInterval(ticker);
     started = false;
     finished = true;
-    stats.wpm = Math.round(stats.keystrokes.correct / 5);
+    const elapsedMin = Math.max(1, (Date.now() - startTime)) / 60000;
+    stats.wpm = Math.round(stats.keystrokes.correct / 5 / elapsedMin);
     if (stats.keystrokes.correct === 0 && stats.keystrokes.incorrect === 0) {
       stats.accuracy = 0;
     } else {
@@ -784,7 +795,7 @@
       : passageMode && currentQuestion
       ? "Passage"
       : "Word";
-    fetch("api/results", {
+    fetch("/api/results", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1084,7 +1095,7 @@
     }
     localStorage.setItem("devtyper_admin_key", key);
     list.textContent = "Loading...";
-    fetch("api/stats?key=" + encodeURIComponent(key))
+    fetch("/api/stats?key=" + encodeURIComponent(key))
       .then((r) => {
         if (r.status === 401) throw new Error("Wrong admin key");
         if (r.status === 503) throw new Error("Database not connected");
@@ -1139,7 +1150,7 @@
             (it.wpm || 0) + " WPM · " +
             (it.accuracy || 0) + "% · " +
             (it.correctWords || 0) + "/" +
-            (it.correctWords || 0) + (it.incorrectWords ? "+" + it.incorrectWords : "") + " words";
+            ((it.correctWords || 0) + (it.incorrectWords || 0)) + " words";
           const top = document.createElement("div");
           top.className = "historyTop";
           const time = document.createElement("span");
@@ -1165,7 +1176,8 @@
 
   function clearHistory() {
     const list = $("#historyList");
-    fetch("api/results", { method: "DELETE" })
+    const key = localStorage.getItem("devtyper_admin_key") || "";
+    fetch("/api/results?key=" + encodeURIComponent(key), { method: "DELETE" })
       .then((r) => r.json())
       .then(() => {
         list.textContent = "History cleared.";
@@ -1184,6 +1196,9 @@
     document.body.classList.toggle("light", theme === "light");
     $("#moonIcon").classList.toggle("hidden", theme === "light");
     $("#sunIcon").classList.toggle("hidden", theme === "dark");
+    const meta = document.getElementById("themeColorMeta");
+    if (meta) meta.content = theme === "dark" ? "#212121" : "#ffffff";
+    try { localStorage.setItem("devtyper_theme", theme); } catch (e) {}
 
     const t = theme === "dark"
       ? { background: "#212121", text: "#ffffff", boxBorder: "#323232", highlight: "#272727", timer: "#ffffff", timerText: "#000000", dropText: "#bbbbbb" }
@@ -1282,7 +1297,7 @@
         vid = Math.random().toString(36).slice(2) + Date.now().toString(36);
         localStorage.setItem("devtyper_visitor", vid);
       }
-      fetch("api/visit", {
+      fetch("/api/visit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ visitorId: vid }),
@@ -1329,8 +1344,17 @@
     generateWords();
     renderWords();
 
-    // theme default dark
-    applyTheme("dark");
+    // restore settings from localStorage
+    const savedTheme = localStorage.getItem("devtyper_theme") || "dark";
+    applyTheme(savedTheme);
+    const savedSwitch = localStorage.getItem("devtyper_switch");
+    if (savedSwitch !== null) { switchSel.value = savedSwitch; currentSwitch = savedSwitch; }
+    const savedLayout = localStorage.getItem("devtyper_layout");
+    if (savedLayout !== null) { layoutSel.value = savedLayout; parseKLE(keyPresets[parseInt(savedLayout)].kle); renderKeyboard(); }
+    const savedCase = localStorage.getItem("devtyper_case");
+    if (savedCase !== null) { caseSel.value = savedCase; setKeyboardColor(keyboardColors[parseInt(savedCase)].background); renderKeyboard(); }
+    const savedTime = localStorage.getItem("devtyper_time");
+    if (savedTime !== null) { raceTime = parseInt(savedTime, 10) * 1000; $("#timeselect").value = savedTime; $("#timeDisplay").textContent = formatTime(raceTime); }
 
     // key wrapper focus handling
     const keywrapper = $("#keywrapper");
@@ -1341,6 +1365,7 @@
     // switch change
     switchSel.addEventListener("change", (e) => {
       currentSwitch = e.target.value;
+      try { localStorage.setItem("devtyper_switch", e.target.value); } catch (er) {}
       switchSel.blur();
       keywrapper.focus();
     });
@@ -1349,6 +1374,7 @@
     layoutSel.addEventListener("change", (e) => {
       parseKLE(keyPresets[parseInt(e.target.value)].kle);
       renderKeyboard();
+      try { localStorage.setItem("devtyper_layout", e.target.value); } catch (er) {}
       layoutSel.blur();
       keywrapper.focus();
     });
@@ -1357,6 +1383,7 @@
     caseSel.addEventListener("change", (e) => {
       setKeyboardColor(keyboardColors[parseInt(e.target.value)].background);
       renderKeyboard();
+      try { localStorage.setItem("devtyper_case", e.target.value); } catch (er) {}
       caseSel.blur();
       keywrapper.focus();
     });
@@ -1365,6 +1392,7 @@
     $("#timeselect").addEventListener("change", (e) => {
       raceTime = parseInt(e.target.value, 10) * 1000;
       $("#timeDisplay").textContent = formatTime(raceTime);
+      try { localStorage.setItem("devtyper_time", e.target.value); } catch (er) {}
       $("#timeselect").blur();
       redo();
       keywrapper.focus();

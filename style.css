@@ -482,7 +482,7 @@ body.light .passageQuestion { color: #0277bd; border-bottom-color: #eeeeee; }
   background-clip: padding-box;
   min-width: 56px;
   min-height: 56px;
-  align-items: left;
+  align-items: flex-start;
   display: flex;
   flex-direction: column;
   transition: background 0.2s linear;
@@ -903,6 +903,14 @@ body.dark .typeBtn.active { background: #3ab049; color: #ffffff; border-color: #
 body.light .wordModeBtn.active,
 body.light .categoryTab.active,
 body.light .typeBtn.active { background: #3ab049; color: #ffffff; border-color: #3ab049; }
+
+/* ============ FOCUS VISIBLE ============ */
+:focus-visible {
+  outline: 2px solid #3ab049;
+  outline-offset: 2px;
+}
+
+body.light :focus-visible { outline-color: #2a8f38; }
 
 /* ============ RESPONSIVE ============ */
 @media (max-width: 1200px) {
