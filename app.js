@@ -1100,7 +1100,7 @@
     }
     localStorage.setItem("devtyper_admin_key", key);
     list.textContent = "Loading...";
-    fetch("/api/stats?key=" + encodeURIComponent(key))
+    fetch("/api/stats?full=1&key=" + encodeURIComponent(key))
       .then((r) => {
         if (r.status === 401) throw new Error("Wrong admin key");
         if (r.status === 503) throw new Error("Admin key not configured");
@@ -1111,9 +1111,17 @@
         const rows = [
           ["Total visits", s.totalVisits],
           ["Unique visitors", s.uniqueVisitors],
+          ["Active visitors (7d)", s.activeVisitors7d],
           ["Visits today", s.todayVisits],
           ["Tests completed", s.results],
           ["Tests today", s.resultsToday],
+          ["Tests (7d)", s.results7d],
+          ["Testers' avg WPM", s.avgWpm],
+          ["Best WPM", s.bestWpm],
+          ["Testers' avg accuracy", s.avgAccuracy + "%"],
+          ["Word-mode tests", s.modeCount && s.modeCount.word],
+          ["Passage-mode tests", s.modeCount && s.modeCount.passage],
+          ["Commands-mode tests", s.modeCount && s.modeCount.commands],
         ];
         rows.forEach(([label, val]) => {
           const div = document.createElement("div");
@@ -1123,11 +1131,32 @@
           l.textContent = label;
           const v = document.createElement("span");
           v.className = "historyMode";
-          v.textContent = val;
+          v.textContent = val === undefined || val === null ? "-" : val;
           div.appendChild(l);
           div.appendChild(v);
           list.appendChild(div);
         });
+        if (s.recentResults && s.recentResults.length) {
+          const cap = document.createElement("div");
+          cap.className = "statsCap";
+          cap.textContent = "Recent real results:";
+          list.appendChild(cap);
+          s.recentResults.forEach((it) => {
+            const div = document.createElement("div");
+            div.className = "historyItem";
+            const l = document.createElement("span");
+            l.className = "historyDate";
+            const d = new Date(it.date);
+            l.textContent = isNaN(d.getTime()) ? "-" : d.toLocaleString();
+            const v = document.createElement("span");
+            v.className = "historyMode";
+            v.textContent =
+              (it.wpm || 0) + " WPM · " + (it.accuracy || 0) + "% · " + (it.mode || "word");
+            div.appendChild(l);
+            div.appendChild(v);
+            list.appendChild(div);
+          });
+        }
       })
       .catch((err) => {
         list.textContent = err.message;

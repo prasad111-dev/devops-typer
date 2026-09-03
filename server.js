@@ -190,15 +190,63 @@ app.post("/api/visit", rateLimit(60000, 60), (req, res) => {
 
 // ---- Stats (admin only) ----
 app.get("/api/stats", requireAdmin, (req, res) => {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const startIso = start.toISOString();
+  const now = new Date();
+  const startToday = new Date();
+  startToday.setHours(0, 0, 0, 0);
+  const startIso = startToday.toISOString();
+
   const totalVisits = store.visits.length;
   const uniqueVisitors = new Set(store.visits.map((v) => v.visitorId)).size;
-  const todayVisits = store.visits.filter((v) => new Date(v.ts) >= start).length;
+  const todayVisits = store.visits.filter((v) => new Date(v.ts) >= startToday).length;
   const results = store.results.length;
-  const resultsToday = store.results.filter((r) => new Date(r.date) >= start).length;
-  res.json({ totalVisits, uniqueVisitors, todayVisits, results, resultsToday });
+  const resultsToday = store.results.filter((r) => new Date(r.date) >= startToday).length;
+
+  // last 7 days window
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  // real performance averages from actual test results
+  const wpmValues = store.results.map((r) => r.wpm).filter((n) => typeof n === "number");
+  const accValues = store.results.map((r) => r.accuracy).filter((n) => typeof n === "number");
+  const avgWpm = wpmValues.length ? Math.round(wpmValues.reduce((a, b) => a + b, 0) / wpmValues.length) : 0;
+  const bestWpm = wpmValues.length ? Math.max(...wpmValues) : 0;
+  const avgAccuracy = accValues.length ? Math.round(accValues.reduce((a, b) => a + b, 0) / accValues.length) : 0;
+
+  // mode breakdown
+  const modeCount = { word: 0, passage: 0, commands: 0 };
+  store.results.forEach((r) => {
+    const m = r.mode || "word";
+    if (modeCount[m] !== undefined) modeCount[m]++;
+    else modeCount[m] = 1;
+  });
+
+  // 7-day trends
+  const visits7d = store.visits.filter((v) => new Date(v.ts) >= weekAgo).length;
+  const results7d = store.results.filter((r) => new Date(r.date) >= weekAgo).length;
+  const activeVisitors7d = new Set(
+    store.visits.filter((v) => new Date(v.ts) >= weekAgo).map((v) => v.visitorId)
+  ).size;
+
+  const full = req.query.full === "1" ? true : req.query.full === "true";
+
+  if (full) {
+    return res.json({
+      totalVisits, uniqueVisitors, todayVisits, results, resultsToday,
+      avgWpm, bestWpm, avgAccuracy,
+      visits7d, results7d, activeVisitors7d,
+      modeCount,
+      recentResults: store.results
+        .slice()
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 20),
+    });
+  }
+
+  res.json({
+    totalVisits, uniqueVisitors, todayVisits, results, resultsToday,
+    avgWpm, bestWpm, avgAccuracy,
+    visits7d, results7d, activeVisitors7d,
+    modeCount,
+  });
 });
 
 // ---- Global error handler ----

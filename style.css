@@ -863,6 +863,15 @@ body.light .resultarea { color: #000000; }
   opacity: 0.8;
 }
 
+.statsCap {
+  font-size: 0.72rem;
+  font-weight: 600;
+  opacity: 0.85;
+  margin: 0.6rem 0 0.2rem;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.4);
+  padding-bottom: 0.15rem;
+}
+
 .historyMode {
   font-size: 0.68rem;
   padding: 0.15rem 0.45rem;
