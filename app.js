@@ -1103,7 +1103,7 @@
     fetch("/api/stats?key=" + encodeURIComponent(key))
       .then((r) => {
         if (r.status === 401) throw new Error("Wrong admin key");
-        if (r.status === 503) throw new Error("Database not connected");
+        if (r.status === 503) throw new Error("Admin key not configured");
         return r.json();
       })
       .then((s) => {
@@ -1137,7 +1137,7 @@
   function loadHistory() {
     const list = $("#historyList");
     list.textContent = "Loading...";
-    fetch("api/results")
+    fetch("/api/results")
       .then((r) => r.json())
       .then((items) => {
         if (!Array.isArray(items)) throw new Error("bad response");
@@ -1175,7 +1175,7 @@
         });
       })
       .catch(() => {
-        list.textContent = "History unavailable — start the server (npm start) with MongoDB connected.";
+        list.textContent = "History unavailable.";
       });
   }
 
@@ -1188,7 +1188,7 @@
         list.textContent = "History cleared.";
       })
       .catch(() => {
-        list.textContent = "History unavailable — start the server (npm start) with MongoDB connected.";
+        list.textContent = "History unavailable.";
       });
   }
 

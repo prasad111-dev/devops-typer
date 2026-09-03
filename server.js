@@ -1,30 +1,56 @@
 const express = require("express");
-const { MongoClient, ObjectId } = require("mongodb");
 const path = require("path");
 const crypto = require("crypto");
+const fs = require("fs");
 
 // ---- Environment ----
-const MONGO_URI = process.env.MONGO_URI;
 const ADMIN_KEY = process.env.ADMIN_KEY;
 const PORT = process.env.PORT || 3000;
-
-if (!MONGO_URI && !path.join(__dirname, "config.js")) {
-  console.error("MONGO_URI is required. Set it in Render or create config.js.");
-}
-
-function getMongoUri() {
-  if (MONGO_URI) return MONGO_URI;
-  try {
-    return require("./config").mongoUri;
-  } catch (e) {
-    return "";
-  }
-}
-
-const mongoUri = getMongoUri();
+const DATA_FILE = path.join(__dirname, "data.json");
 
 if (!ADMIN_KEY) {
   console.warn("WARNING: ADMIN_KEY not set. Stats and delete endpoints are disabled.");
+}
+
+// ---- Data store (in-memory + JSON file, no MongoDB) ----
+const store = {
+  results: [],
+  visits: [],
+  _loaded: false,
+};
+
+function loadStore() {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      const raw = JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+      store.results = Array.isArray(raw.results) ? raw.results : [];
+      store.visits = Array.isArray(raw.visits) ? raw.visits : [];
+    }
+  } catch (e) {
+    console.error("Failed to load data file, starting fresh:", e.message);
+    store.results = [];
+    store.visits = [];
+  }
+  store._loaded = true;
+}
+
+let saveTimer = null;
+function saveStore() {
+  if (!store._loaded) return;
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      fs.writeFileSync(DATA_FILE, JSON.stringify({ results: store.results, visits: store.visits }));
+    } catch (e) {
+      console.error("Failed to save data file:", e.message);
+    }
+  }, 200);
+}
+
+loadStore();
+
+function genererateId() {
+  return crypto.randomBytes(8).toString("hex");
 }
 
 // ---- Express setup ----
@@ -52,6 +78,7 @@ const sensitiveFiles = [
   ".env",
   ".env.example",
   ".gitignore",
+  "data.json",
 ];
 app.use((req, res, next) => {
   const basename = path.basename(decodeURIComponent(req.url.split("?")[0]));
@@ -63,7 +90,7 @@ app.use((req, res, next) => {
 
 app.use(express.static(path.join(__dirname)));
 
-// ---- Rate limiting (in-memory, no redis) ----
+// ---- Rate limiting (in-memory) ----
 const rateBuckets = new Map();
 function rateLimit(windowMs, max) {
   return (req, res, next) => {
@@ -82,45 +109,6 @@ function rateLimit(windowMs, max) {
   };
 }
 
-// ---- Database ----
-let dbReady = false;
-let dbError = "";
-let resultsCol = null;
-let visitsCol = null;
-let mongoClient = null;
-
-async function connectDB(retries = 3) {
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      mongoClient = new MongoClient(mongoUri);
-      await mongoClient.connect();
-      const db = mongoClient.db("devopstyper");
-      resultsCol = db.collection("results");
-      visitsCol = db.collection("visits");
-      dbReady = true;
-      dbError = "";
-      await resultsCol.createIndex({ date: -1 });
-      await visitsCol.createIndex({ ts: -1 });
-      await visitsCol.createIndex({ visitorId: 1 });
-      console.log("MongoDB connected (attempt " + attempt + ")");
-      return;
-    } catch (err) {
-      dbError = err.message;
-      console.error("MongoDB attempt " + attempt + "/" + retries + " failed:", err.message);
-      if (attempt < retries) {
-        const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
-        await new Promise((r) => setTimeout(r, delay));
-      }
-    }
-  }
-  console.error("MongoDB connection failed after " + retries + " attempts.");
-}
-connectDB();
-
-function dbUnavailable(res) {
-  return res.status(503).json({ error: "database not connected", detail: dbError });
-}
-
 function requireAdmin(req, res, next) {
   if (!ADMIN_KEY) return res.status(503).json({ error: "admin key not configured" });
   const key = req.query.key || req.headers["x-admin-key"];
@@ -134,95 +122,83 @@ function requireAdmin(req, res, next) {
 
 // ---- Health ----
 app.get("/api/health", (req, res) => {
-  res.json({ status: dbReady ? "ok" : "degraded", db: dbReady });
+  res.json({ status: "ok", db: false, storage: "json-file" });
 });
 
 // ---- Results API ----
-app.get("/api/results", async (req, res) => {
-  if (!dbReady) return dbUnavailable(res);
-  try {
-    const items = await resultsCol.find({}).sort({ date: -1 }).limit(200).toArray();
-    res.json(items);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+app.get("/api/results", (req, res) => {
+  const limit = Math.max(1, Math.min(500, Number(req.query.limit) || 200));
+  const items = store.results
+    .slice()
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, limit);
+  res.json(items);
 });
 
-app.post("/api/results", rateLimit(60000, 30), async (req, res) => {
-  if (!dbReady) return dbUnavailable(res);
+app.post("/api/results", rateLimit(60000, 30), (req, res) => {
   const raw = req.body || {};
   if (raw.wpm === undefined || raw.wpm === null) {
     return res.status(400).json({ error: "invalid payload" });
   }
   const doc = {
+    id: genererateId(),
     wpm: Math.max(0, Math.min(300, Number(raw.wpm) || 0)),
     accuracy: Math.max(0, Math.min(100, Number(raw.accuracy) || 0)),
     correctWords: Math.max(0, Math.min(1000, Number(raw.correctWords) || 0)),
     incorrectWords: Math.max(0, Math.min(1000, Number(raw.incorrectWords) || 0)),
     mode: ["word", "passage", "commands"].includes(raw.mode) ? raw.mode : "word",
-    date: raw.date ? new Date(raw.date) : new Date(),
+    date: raw.date ? new Date(raw.date).toISOString() : new Date().toISOString(),
   };
-  try {
-    const r = await resultsCol.insertOne(doc);
-    res.status(201).json({ id: r.insertedId });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  store.results.push(doc);
+  saveStore();
+  res.status(201).json({ id: doc.id });
 });
 
-app.delete("/api/results/:id", requireAdmin, async (req, res) => {
-  if (!dbReady) return dbUnavailable(res);
-  try {
-    await resultsCol.deleteOne({ _id: new ObjectId(req.params.id) });
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+app.delete("/api/results/:id", requireAdmin, (req, res) => {
+  const before = store.results.length;
+  store.results = store.results.filter((r) => r.id !== req.params.id);
+  if (store.results.length === before) {
+    return res.status(404).json({ error: "not found" });
   }
+  saveStore();
+  res.json({ ok: true });
 });
 
-app.delete("/api/results", requireAdmin, async (req, res) => {
-  if (!dbReady) return dbUnavailable(res);
-  try {
-    await resultsCol.deleteMany({});
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+app.delete("/api/results", requireAdmin, (req, res) => {
+  store.results = [];
+  saveStore();
+  res.json({ ok: true });
 });
 
 // ---- Visit tracking ----
-app.post("/api/visit", rateLimit(60000, 60), async (req, res) => {
-  if (!dbReady) return dbUnavailable(res);
+app.post("/api/visit", rateLimit(60000, 60), (req, res) => {
   const visitorId = req.body && req.body.visitorId;
   if (!visitorId || typeof visitorId !== "string") {
     return res.status(400).json({ error: "missing visitorId" });
   }
-  try {
-    await visitsCol.insertOne({
-      visitorId: visitorId.slice(0, 100),
-      ts: new Date(),
-    });
-    res.status(201).json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  store.visits.push({
+    visitorId: visitorId.slice(0, 100),
+    ts: new Date().toISOString(),
+  });
+  // keep only last 50k visits in memory to bound memory use
+  if (store.visits.length > 50000) {
+    store.visits = store.visits.slice(-50000);
   }
+  saveStore();
+  res.status(201).json({ ok: true });
 });
 
 // ---- Stats (admin only) ----
-app.get("/api/stats", requireAdmin, async (req, res) => {
-  if (!dbReady) return dbUnavailable(res);
-  try {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const totalVisits = await visitsCol.countDocuments({});
-    const uniqueVisitors = (await visitsCol.distinct("visitorId")).length;
-    const todayVisits = await visitsCol.countDocuments({ ts: { $gte: start } });
-    const results = await resultsCol.countDocuments({});
-    const resultsToday = await resultsCol.countDocuments({ date: { $gte: start } });
-    res.json({ totalVisits, uniqueVisitors, todayVisits, results, resultsToday });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+app.get("/api/stats", requireAdmin, (req, res) => {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const startIso = start.toISOString();
+  const totalVisits = store.visits.length;
+  const uniqueVisitors = new Set(store.visits.map((v) => v.visitorId)).size;
+  const todayVisits = store.visits.filter((v) => new Date(v.ts) >= start).length;
+  const results = store.results.length;
+  const resultsToday = store.results.filter((r) => new Date(r.date) >= start).length;
+  res.json({ totalVisits, uniqueVisitors, todayVisits, results, resultsToday });
 });
 
 // ---- Global error handler ----
@@ -234,8 +210,10 @@ app.use((err, req, res, _next) => {
 // ---- Graceful shutdown ----
 function shutdown() {
   console.log("Shutting down...");
-  if (mongoClient) {
-    mongoClient.close().catch(() => {});
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify({ results: store.results, visits: store.visits }));
+  } catch (e) {
+    console.error("Failed to save data file on shutdown:", e.message);
   }
   process.exit(0);
 }
@@ -244,5 +222,5 @@ process.on("SIGINT", shutdown);
 
 // ---- Start ----
 app.listen(PORT, () => {
-  console.log("devopstyper-59 running on port " + PORT);
+  console.log("devopstyper-59 running on port " + PORT + " (storage: JSON file, no MongoDB)");
 });
